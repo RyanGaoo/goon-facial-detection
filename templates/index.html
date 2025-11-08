@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facial Recognition App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .camera-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            height: fit-content;
+        }
+
+        #video {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            background: #f0f0f0;
+            min-height: 400px;
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #56ab2f, #a8e6cf);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(86, 171, 47, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #ff416c, #ff4b2b);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 65, 108, 0.4);
+        }
+
+        .face-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .face-info h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .face-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .face-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .face-name {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 18px;
+        }
+
+        .face-emotion {
+            color: #28a745;
+            margin: 5px 0;
+        }
+
+        .face-details {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .add-person-form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .people-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .people-list h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+
+        .person-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .person-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .person-date {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .delete-btn:hover {
+            background: #c82333;
+        }
+
+        .status-message {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: 600;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .controls {
+                justify-content: center;
+            }
+        }
+
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        .recognition-overlay {
+            position: relative;
+            display: inline-block;
+        }
+
+        .face-box {
+            position: absolute;
+            border: 3px solid #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+            pointer-events: none;
+        }
+
+        .face-label {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            top: -30px;
+            left: 0;
+        }
+
+        @keyframes flashRed {
+            0%, 100% { background-color: rgba(255, 0, 0, 0.7); }
+            50% { background-color: rgba(255, 0, 0, 0.3); }
+        }
+
+        .red-flash-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            animation: flashRed 0.5s infinite;
+            display: none;
+        }
+
+        .red-flash-overlay.active {
+            display: block;
+        }
+
+        .audio-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 10px;
+            background-color: #ccc;
+        }
+
+        .audio-indicator.listening {
+            background-color: #28a745;
+            animation: pulse 1s infinite;
+        }
+
+        .audio-indicator.clapping {
+            background-color: #ff4b2b;
+            animation: pulse 0.3s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .clap-indicator {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 75, 43, 0.95);
+            color: white;
+            padding: 30px 50px;
+            border-radius: 20px;
+            font-size: 48px;
+            font-weight: bold;
+            z-index: 10000;
+            display: none;
+            box-shadow: 0 10px 50px rgba(255, 75, 43, 0.6);
+            animation: bounce 0.5s ease;
+        }
+
+        .clap-indicator.show {
+            display: block;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        .status-bar {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            display: inline-block;
+            backdrop-filter: blur(10px);
+        }
+
+        .audio-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="red-flash-overlay" id="redFlash"></div>
+    <div class="clap-indicator" id="clapIndicator">👏 CLAP!</div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🎭 Facial Recognition & Emotion Detection</h1>
+            <p>Capture faces, recognize emotions, and identify people in real-time</p>
+            <div class="status-bar" style="margin-top: 15px;">
+                <div class="audio-info">
+                    <span style="font-weight: 600;">🎤 Audio:</span>
+                    <span class="audio-indicator" id="audioIndicator"></span>
+                    <span id="audioStatus" style="font-weight: 500;">Inactive</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="camera-section">
+                <div class="recognition-overlay">
+                    <video id="video" autoplay playsinline></video>
+                    <canvas id="canvas"></canvas>
+                </div>
+
+                <div class="controls">
+                    <button class="btn btn-primary" id="startCamera">📹 Start Camera</button>
+                    <button class="btn btn-danger" id="stopCamera" style="display: none;">⏹️ Stop Camera</button>
+                    <button class="btn btn-success" id="capturePhoto">📸 Capture Photo</button>
+                    <button class="btn btn-primary" id="toggleRecognition">🔍 Start Recognition</button>
+                </div>
+
+                <div class="loading" id="loading">
+                    <p>🔄 Processing...</p>
+                </div>
+
+                <div id="faceInfo" class="face-info" style="display: none;">
+                    <h3>👥 Detected Faces</h3>
+                    <div id="faceResults"></div>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="add-person-form">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">➕ Add New Person</h3>
+                    <div class="form-group">
+                        <label for="personName">Name:</label>
+                        <input type="text" id="personName" placeholder="Enter person's name">
+                    </div>
+                    <button class="btn btn-success" id="addPerson">Add Person</button>
+                    <div id="statusMessage"></div>
+                </div>
+
+                <div class="people-list">
+                    <h3>👥 Registered People (<span id="peopleCount">0</span>)</h3>
+                    <div id="peopleList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class FacialRecognitionApp {
+            constructor() {
+                this.video = document.getElementById('video');
+                this.canvas = document.getElementById('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.stream = null;
+                this.isRecognizing = false;
+                this.isProcessing = false;
+                this.recognitionInterval = null;
+                this.capturedImageData = null;
+
+                // Audio detection properties
+                this.audioContext = null;
+                this.audioAnalyser = null;
+                this.audioDataArray = null;
+                this.isListeningForClaps = false;
+                this.isClapDetected = false;
+                this.lastClapTime = 0;
+                this.lastLogTime = 0;  // For debug logging
+                this.currentEmotion = 'neutral';
+
+                // Rhythmic clapping detection
+                this.clapHistory = [];  // Store timestamps of detected claps
+                this.requiredClaps = 5;  // Number of claps needed
+                this.maxClapInterval = 2000;  // Max time between claps (ms)
+                this.isRhythmicClapping = false;
+
+                this.initializeEventListeners();
+                this.loadPeopleList();
+            }
+
+            initializeEventListeners() {
+                document.getElementById('startCamera').addEventListener('click', () => this.startCamera());
+                document.getElementById('stopCamera').addEventListener('click', () => this.stopCamera());
+                document.getElementById('capturePhoto').addEventListener('click', () => this.capturePhoto());
+                document.getElementById('toggleRecognition').addEventListener('click', () => this.toggleRecognition());
+                document.getElementById('addPerson').addEventListener('click', () => this.addPerson());
+            }
+
+            async startCamera() {
+                try {
+                    this.stream = await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            width: { ideal: 640 },
+                            height: { ideal: 480 }
+                        },
+                        audio: true // Enable audio for clap detection
+                    });
+                    this.video.srcObject = this.stream;
+
+                    // Initialize audio detection
+                    this.initializeAudioDetection(this.stream);
+
+                    document.getElementById('startCamera').style.display = 'none';
+                    document.getElementById('stopCamera').style.display = 'inline-block';
+
+                    this.showStatus('Camera and microphone started successfully!', 'success');
+                } catch (error) {
+                    console.error('Error accessing camera:', error);
+                    this.showStatus('Failed to access camera/microphone. Please check permissions.', 'error');
+                }
+            }
+
+            stopCamera() {
+                if (this.stream) {
+                    this.stream.getTracks().forEach(track => track.stop());
+                    this.video.srcObject = null;
+                    this.stream = null;
+                }
+
+                if (this.isRecognizing) {
+                    this.toggleRecognition();
+                }
+
+                // Stop audio detection
+                this.stopAudioDetection();
+
+                document.getElementById('startCamera').style.display = 'inline-block';
+                document.getElementById('stopCamera').style.display = 'none';
+
+                this.showStatus('Camera stopped.', 'success');
+            }
+
+            capturePhoto() {
+                if (!this.video.srcObject) {
+                    this.showStatus('Please start the camera first.', 'error');
+                    return;
+                }
+
+                this.canvas.width = this.video.videoWidth;
+                this.canvas.height = this.video.videoHeight;
+                this.ctx.drawImage(this.video, 0, 0);
+
+                this.capturedImageData = this.canvas.toDataURL('image/jpeg');
+                this.showStatus('Photo captured! Enter a name and click "Add Person".', 'success');
+            }
+
+            async toggleRecognition() {
+                const button = document.getElementById('toggleRecognition');
+
+                if (this.isRecognizing) {
+                    // Stop recognition
+                    this.isRecognizing = false;
+                    this.isProcessing = false;
+                    if (this.recognitionInterval) {
+                        clearInterval(this.recognitionInterval);
+                    }
+                    button.textContent = '🔍 Start Recognition';
+                    button.className = 'btn btn-primary';
+                    document.getElementById('faceInfo').style.display = 'none';
+                } else {
+                    // Start recognition
+                    if (!this.video.srcObject) {
+                        this.showStatus('Please start the camera first.', 'error');
+                        return;
+                    }
+
+                    this.isRecognizing = true;
+                    this.isProcessing = false;
+                    button.textContent = '⏹️ Stop Recognition';
+                    button.className = 'btn btn-danger';
+                    document.getElementById('faceInfo').style.display = 'block';
+
+                    this.showStatus('Starting recognition... This may take a moment to load models.', 'success');
+
+                    // Start recognition loop
+                    this.recognitionInterval = setInterval(() => {
+                        this.performRecognition();
+                    }, 3000); // Analyze every 3 seconds (reduced frequency)
+
+                    // Perform first recognition immediately
+                    this.performRecognition();
+                }
+            }
+
+            async performRecognition() {
+                if (!this.isRecognizing || !this.video.srcObject || this.isProcessing) return;
+
+                this.isProcessing = true;
+                console.log('Starting recognition request...');
+
+                try {
+                    // Set canvas to match video dimensions
+                    this.canvas.width = this.video.videoWidth;
+                    this.canvas.height = this.video.videoHeight;
+
+                    // Clear previous drawings
+                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                    // Draw current video frame to temporary canvas for capture
+                    this.ctx.drawImage(this.video, 0, 0);
+                    const imageData = this.canvas.toDataURL('image/jpeg', 0.8);
+
+                    // Clear again before sending to API
+                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                    const response = await fetch('/api/analyze_frame', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ image: imageData })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        console.log('Recognition successful:', result.faces.length, 'faces detected');
+                        this.displayFaceResults(result.faces);
+                        this.drawFaceBoxes(result.faces);
+                    } else {
+                        console.error('Recognition failed:', result.message);
+                        this.showStatus('Recognition error: ' + result.message, 'error');
+                    }
+                } catch (error) {
+                    console.error('Recognition error:', error);
+                    this.showStatus('Recognition error. Check console.', 'error');
+                } finally {
+                    this.isProcessing = false;
+                }
+            }
+
+            drawFaceBoxes(faces) {
+                // Clear canvas first
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                if (!faces || faces.length === 0) {
+                    return;
+                }
+
+                faces.forEach(face => {
+                    const region = face.region;
+                    if (region && region.x !== undefined) {
+                        const { x, y, w, h } = region;
+
+                        // Draw rectangle
+                        this.ctx.strokeStyle = face.name !== 'Unknown' ? '#00ff00' : '#ff0000';
+                        this.ctx.lineWidth = 3;
+                        this.ctx.strokeRect(x, y, w, h);
+
+                        // Draw label background
+                        const label = `${face.name} (${face.dominant_emotion})`;
+                        this.ctx.font = '16px Arial';
+                        const textWidth = this.ctx.measureText(label).width;
+
+                        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                        this.ctx.fillRect(x, y - 25, textWidth + 10, 25);
+
+                        // Draw label text
+                        this.ctx.fillStyle = '#ffffff';
+                        this.ctx.fillText(label, x + 5, y - 7);
+                    }
+                });
+            }
+
+            displayFaceResults(faces) {
+                const faceResults = document.getElementById('faceResults');
+
+                if (faces.length === 0) {
+                    faceResults.innerHTML = '<p>No faces detected</p>';
+                    this.currentEmotion = 'neutral';
+                    return;
+                }
+
+                // Update current emotion from the first detected face
+                if (faces.length > 0 && faces[0].dominant_emotion) {
+                    this.currentEmotion = faces[0].dominant_emotion;
+
+                    // Check if we should trigger red flash (fear + clap)
+                    if (this.currentEmotion === 'fear' && this.isClapDetected) {
+                        this.checkForFearAndClap();
+                    }
+                }
+
+                let html = '';
+                faces.forEach((face, index) => {
+                    const emotionScores = Object.entries(face.emotion || {})
+                        .sort(([,a], [,b]) => b - a)
+                        .slice(0, 3)
+                        .map(([emotion, score]) => `${emotion}: ${score.toFixed(1)}%`)
+                        .join(', ');
+
+                    // Highlight fear emotion with warning icon
+                    const emotionDisplay = face.dominant_emotion === 'fear'
+                        ? `🚨 ${face.dominant_emotion}`
+                        : `😊 ${face.dominant_emotion}`;
+
+                    html += `
+                        <div class="face-card" style="${face.dominant_emotion === 'fear' ? 'border-left: 4px solid #ff4b2b;' : ''}">
+                            <div class="face-name">${face.name}</div>
+                            <div class="face-emotion">${emotionDisplay}</div>
+                            <div class="face-details">
+                                Age: ${Math.round(face.age)} | Gender: ${face.gender}
+                                ${face.confidence ? `| Confidence: ${(face.confidence * 100).toFixed(1)}%` : ''}
+                            </div>
+                            <div class="face-details" style="font-size: 12px; margin-top: 5px;">
+                                ${emotionScores}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                faceResults.innerHTML = html;
+            }
+
+            async addPerson() {
+                const name = document.getElementById('personName').value.trim();
+
+                if (!name) {
+                    this.showStatus('Please enter a name.', 'error');
+                    return;
+                }
+
+                if (!this.capturedImageData) {
+                    this.showStatus('Please capture a photo first.', 'error');
+                    return;
+                }
+
+                this.showLoading(true);
+
+                try {
+                    const response = await fetch('/api/add_person', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            name: name,
+                            image: this.capturedImageData
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        this.showStatus(`${name} added successfully!`, 'success');
+                        document.getElementById('personName').value = '';
+                        this.capturedImageData = null;
+                        this.loadPeopleList();
+                    } else {
+                        this.showStatus(result.message, 'error');
+                    }
+                } catch (error) {
+                    console.error('Error adding person:', error);
+                    this.showStatus('Failed to add person. Please try again.', 'error');
+                } finally {
+                    this.showLoading(false);
+                }
+            }
+
+            async loadPeopleList() {
+                try {
+                    const response = await fetch('/api/people');
+                    const people = await response.json();
+
+                    const peopleList = document.getElementById('peopleList');
+                    const peopleCount = document.getElementById('peopleCount');
+
+                    peopleCount.textContent = people.length;
+
+                    if (people.length === 0) {
+                        peopleList.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">No people registered yet</p>';
+                        return;
+                    }
+
+                    let html = '';
+                    people.forEach(person => {
+                        const date = new Date(person.added_date).toLocaleDateString();
+                        html += `
+                            <div class="person-item">
+                                <div>
+                                    <div class="person-name">${person.name}</div>
+                                    <div class="person-date">Added: ${date}</div>
+                                </div>
+                                <button class="delete-btn" onclick="app.deletePerson('${person.id}')">🗑️</button>
+                            </div>
+                        `;
+                    });
+
+                    peopleList.innerHTML = html;
+                } catch (error) {
+                    console.error('Error loading people list:', error);
+                }
+            }
+
+            async deletePerson(personId) {
+                if (!confirm('Are you sure you want to delete this person?')) return;
+
+                try {
+                    const response = await fetch(`/api/delete_person/${personId}`, {
+                        method: 'DELETE'
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        this.showStatus('Person deleted successfully!', 'success');
+                        this.loadPeopleList();
+                    } else {
+                        this.showStatus(result.message, 'error');
+                    }
+                } catch (error) {
+                    console.error('Error deleting person:', error);
+                    this.showStatus('Failed to delete person.', 'error');
+                }
+            }
+
+            showStatus(message, type) {
+                const statusDiv = document.getElementById('statusMessage');
+                statusDiv.innerHTML = `<div class="status-message status-${type}">${message}</div>`;
+
+                setTimeout(() => {
+                    statusDiv.innerHTML = '';
+                }, 5000);
+            }
+
+            showLoading(show) {
+                document.getElementById('loading').style.display = show ? 'block' : 'none';
+            }
+
+            initializeAudioDetection(stream) {
+                try {
+                    // Create audio context
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+                    // Create analyser node
+                    this.audioAnalyser = this.audioContext.createAnalyser();
+                    this.audioAnalyser.fftSize = 2048;
+                    this.audioAnalyser.smoothingTimeConstant = 0.2;  // Less smoothing for faster response
+                    this.audioAnalyser.minDecibels = -90;
+                    this.audioAnalyser.maxDecibels = -10;
+
+                    // Get audio track from stream
+                    const audioTrack = stream.getAudioTracks()[0];
+                    if (!audioTrack) {
+                        console.error('No audio track found');
+                        return;
+                    }
+
+                    // Create media stream source
+                    const source = this.audioContext.createMediaStreamSource(new MediaStream([audioTrack]));
+                    source.connect(this.audioAnalyser);
+
+                    // Create data array for frequency data
+                    const bufferLength = this.audioAnalyser.frequencyBinCount;
+                    this.audioDataArray = new Uint8Array(bufferLength);
+
+                    // Start listening for claps
+                    this.isListeningForClaps = true;
+                    this.detectClaps();
+
+                    // Update UI
+                    document.getElementById('audioIndicator').className = 'audio-indicator listening';
+                    document.getElementById('audioStatus').textContent = 'Listening for rhythmic claps...';
+
+                    console.log('🎤 Audio detection initialized. FFT size:', this.audioAnalyser.fftSize,
+                               'Buffer length:', bufferLength);
+                    console.log('👏 Listening for rhythmic clapping! Clap', this.requiredClaps, 'times in a row.');
+                    console.log('   Audio levels will be logged every 2 seconds.');
+                } catch (error) {
+                    console.error('Error initializing audio detection:', error);
+                }
+            }
+
+            detectClaps() {
+                if (!this.isListeningForClaps || !this.audioAnalyser) return;
+
+                // Get current audio data
+                this.audioAnalyser.getByteFrequencyData(this.audioDataArray);
+
+                // Calculate multiple frequency ranges to better detect claps
+                const lowStart = Math.floor(this.audioDataArray.length * 0.05);
+                const lowEnd = Math.floor(this.audioDataArray.length * 0.15);
+                const midStart = Math.floor(this.audioDataArray.length * 0.15);
+                const midEnd = Math.floor(this.audioDataArray.length * 0.4);
+                const highStart = Math.floor(this.audioDataArray.length * 0.4);
+                const highEnd = Math.floor(this.audioDataArray.length * 0.7);
+
+                // Calculate average for each range
+                let lowSum = 0, midSum = 0, highSum = 0, maxValue = 0;
+
+                for (let i = lowStart; i < lowEnd; i++) {
+                    lowSum += this.audioDataArray[i];
+                    maxValue = Math.max(maxValue, this.audioDataArray[i]);
+                }
+                for (let i = midStart; i < midEnd; i++) {
+                    midSum += this.audioDataArray[i];
+                    maxValue = Math.max(maxValue, this.audioDataArray[i]);
+                }
+                for (let i = highStart; i < highEnd; i++) {
+                    highSum += this.audioDataArray[i];
+                    maxValue = Math.max(maxValue, this.audioDataArray[i]);
+                }
+
+                const lowAvg = lowSum / (lowEnd - lowStart);
+                const midAvg = midSum / (midEnd - midStart);
+                const highAvg = highSum / (highEnd - highStart);
+                const totalAvg = (lowAvg + midAvg + highAvg) / 3;
+
+                // Debug: Log values every 2 seconds to help tune
+                if (!this.lastLogTime || Date.now() - this.lastLogTime > 2000) {
+                    console.log('Audio levels - Low:', lowAvg.toFixed(1), 'Mid:', midAvg.toFixed(1),
+                               'High:', highAvg.toFixed(1), 'Max:', maxValue, 'Total:', totalAvg.toFixed(1),
+                               '| Claps in history:', this.clapHistory.length);
+                    this.lastLogTime = Date.now();
+                }
+
+                // Thresholds for detecting individual claps
+                const avgThreshold = 50;
+                const maxThreshold = 120;
+                const currentTime = Date.now();
+
+                // Detect if either average exceeds threshold OR there's a sharp peak
+                const avgExceeded = totalAvg > avgThreshold || midAvg > avgThreshold * 1.2;
+                const peakDetected = maxValue > maxThreshold;
+
+                // Individual clap detected
+                if ((avgExceeded || peakDetected) && (currentTime - this.lastClapTime) > 300) {
+                    this.lastClapTime = currentTime;
+
+                    // Add to clap history
+                    this.clapHistory.push(currentTime);
+
+                    console.log('👏 Single clap detected! (', this.clapHistory.length, 'in sequence) - Avg:',
+                               totalAvg.toFixed(2), 'Max:', maxValue);
+
+                    // Clean up old claps (remove claps older than maxClapInterval)
+                    this.clapHistory = this.clapHistory.filter(time =>
+                        currentTime - time < this.maxClapInterval
+                    );
+
+                    // Check if we have enough rhythmic claps
+                    if (this.clapHistory.length >= this.requiredClaps) {
+                        // Verify they are rhythmic (similar intervals)
+                        if (this.isRhythmicPattern()) {
+                            this.onRhythmicClappingDetected();
+                            // Clear history after detecting pattern
+                            this.clapHistory = [];
+                        }
+                    }
+
+                    // Update UI for single clap
+                    document.getElementById('audioIndicator').className = 'audio-indicator clapping';
+                    const statusText = this.clapHistory.length >= this.requiredClaps
+                        ? '🎵 Rhythmic clapping!'
+                        : `👏 Clap ${this.clapHistory.length}/${this.requiredClaps}`;
+                    document.getElementById('audioStatus').textContent = statusText;
+
+                    // Reset single clap indicator after a short delay
+                    setTimeout(() => {
+                        if (this.isListeningForClaps && !this.isRhythmicClapping) {
+                            document.getElementById('audioIndicator').className = 'audio-indicator listening';
+                            const status = this.clapHistory.length > 0
+                                ? `Listening... (${this.clapHistory.length}/${this.requiredClaps})`
+                                : 'Listening for claps...';
+                            document.getElementById('audioStatus').textContent = status;
+                        }
+                    }, 500);
+                }
+
+                // Continue listening
+                requestAnimationFrame(() => this.detectClaps());
+            }
+
+            isRhythmicPattern() {
+                if (this.clapHistory.length < this.requiredClaps) return false;
+
+                // Get the last N claps
+                const recentClaps = this.clapHistory.slice(-this.requiredClaps);
+
+                // Calculate intervals between claps
+                const intervals = [];
+                for (let i = 1; i < recentClaps.length; i++) {
+                    intervals.push(recentClaps[i] - recentClaps[i-1]);
+                }
+
+                // Check if intervals are relatively consistent (rhythmic)
+                const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+                const maxDeviation = avgInterval * 0.4; // Allow 40% deviation
+
+                const isRhythmic = intervals.every(interval =>
+                    Math.abs(interval - avgInterval) < maxDeviation
+                );
+
+                if (isRhythmic) {
+                    console.log('✅ Rhythmic pattern detected! Intervals:', intervals, 'Avg:', avgInterval.toFixed(0), 'ms');
+                }
+
+                return isRhythmic;
+            }
+
+            onRhythmicClappingDetected() {
+                this.isRhythmicClapping = true;
+                this.isClapDetected = true;
+
+                console.log('🎵 RHYTHMIC CLAPPING DETECTED!');
+
+                // Update UI indicator
+                document.getElementById('audioIndicator').className = 'audio-indicator clapping';
+                document.getElementById('audioStatus').textContent = '🎵 Rhythmic clapping!';
+
+                // Show big clap indicator
+                this.showClapIndicator();
+
+                // Check if we should trigger the red flash (fear + clap)
+                this.checkForFearAndClap();
+
+                // Reset after a delay
+                setTimeout(() => {
+                    this.isRhythmicClapping = false;
+                    this.isClapDetected = false;
+                    if (this.isListeningForClaps) {
+                        document.getElementById('audioIndicator').className = 'audio-indicator listening';
+                        document.getElementById('audioStatus').textContent = 'Listening for rhythmic claps...';
+                    }
+                }, 2000);
+            }
+
+            checkForFearAndClap() {
+                // If current emotion is fear and rhythmic clapping was detected, start red flash
+                if (this.currentEmotion === 'fear' && this.isRhythmicClapping) {
+                    console.log('🚨 FEAR + RHYTHMIC CLAPPING DETECTED! Starting red flash!');
+                    this.startRedFlash();
+                }
+            }
+
+            showClapIndicator() {
+                const clapIndicator = document.getElementById('clapIndicator');
+                clapIndicator.textContent = '🎵 RHYTHMIC CLAPPING!';
+                clapIndicator.classList.add('show');
+
+                // Hide after 2 seconds
+                setTimeout(() => {
+                    clapIndicator.classList.remove('show');
+                    clapIndicator.textContent = '👏 CLAP!';
+                }, 2000);
+            }
+
+            startRedFlash() {
+                const flashOverlay = document.getElementById('redFlash');
+                flashOverlay.classList.add('active');
+
+                // Stop flash after 5 seconds
+                setTimeout(() => {
+                    this.stopRedFlash();
+                }, 5000);
+            }
+
+            stopRedFlash() {
+                const flashOverlay = document.getElementById('redFlash');
+                flashOverlay.classList.remove('active');
+            }
+
+            stopAudioDetection() {
+                this.isListeningForClaps = false;
+                if (this.audioContext) {
+                    this.audioContext.close();
+                    this.audioContext = null;
+                }
+                this.audioAnalyser = null;
+                this.audioDataArray = null;
+                this.clapHistory = [];
+
+                // Update UI
+                document.getElementById('audioIndicator').className = 'audio-indicator';
+                document.getElementById('audioStatus').textContent = 'Inactive';
+            }
+        }
+
+        // Initialize the app when page loads
+        const app = new FacialRecognitionApp();
+    </script>
+</body>
+</html>
