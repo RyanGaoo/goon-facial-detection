@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
+import FaceOverlay, { FaceData } from './FaceOverlay';
 
 /**
  * @interface CameraFeedRef
@@ -13,16 +14,26 @@ export interface CameraFeedRef {
 }
 
 /**
+ * @interface CameraFeedProps
+ * @description Props for the CameraFeed component
+ */
+interface CameraFeedProps {
+  faces?: FaceData[];
+}
+
+/**
  * @component CameraFeed
- * @description A React component that displays a live camera feed.
+ * @description A React component that displays a live camera feed with face detection overlays.
  * It automatically starts the camera on mount and stops it on unmount.
- * @param {object} props - No props are currently accepted.
+ * @param {CameraFeedProps} props - Component props
  * @param {React.Ref<CameraFeedRef>} ref - A ref to access CameraFeedRef methods  
  */
-const CameraFeed = forwardRef<CameraFeedRef, {}>((props, ref) => {
+const CameraFeed = forwardRef<CameraFeedRef, CameraFeedProps>(({ faces = [] }, ref) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
   // Expose methods via the ref for parent components to interact with the camera.
   useImperativeHandle(ref, () => ({
@@ -105,8 +116,28 @@ const CameraFeed = forwardRef<CameraFeedRef, {}>((props, ref) => {
     };
   }, []); // Empty dependency array ensures this runs once on mount and once on unmount.
 
+  // Update container size for face overlay scaling
+  useEffect(() => {
+    const updateSize = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setContainerSize({ width: rect.width, height: rect.height });
+      }
+    };
+
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
+
+  const videoWidth = videoRef.current?.videoWidth || 1;
+  const videoHeight = videoRef.current?.videoHeight || 1;
+
   return (
-    <div className="w-full max-w-3xl aspect-video relative rounded-xl shadow-2xl overflow-hidden">
+    <div 
+      ref={containerRef}
+      className="w-full max-w-3xl aspect-video relative rounded-xl shadow-2xl overflow-hidden"
+    >
       <video
         ref={videoRef}
         className="w-full h-full object-cover"
@@ -114,6 +145,18 @@ const CameraFeed = forwardRef<CameraFeedRef, {}>((props, ref) => {
         playsInline
         muted
       />
+      
+      {/* Face detection overlay */}
+      {faces.length > 0 && containerSize.width > 0 && (
+        <FaceOverlay
+          faces={faces}
+          videoWidth={videoWidth}
+          videoHeight={videoHeight}
+          containerWidth={containerSize.width}
+          containerHeight={containerSize.height}
+        />
+      )}
+      
       {error && (
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 text-rose-400 p-4 lowercase">
           {error}

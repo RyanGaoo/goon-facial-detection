@@ -1,7 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import emailjs from '@emailjs/browser';
-import CameraFeed, { CameraFeedRef } from './components/CameraFeed'; // Import CameraFeedRef
+import CameraFeed, { CameraFeedRef } from './components/CameraFeed';
 import Button from './components/Button';
+import AlarmOverlay from './components/AlarmOverlay';
+import StatusIndicator from './components/StatusIndicator';
+import ClapIndicator from './components/ClapIndicator';
+import FaceDatabase from './components/FaceDatabase';
+import { useFaceDetection } from './hooks/useFaceDetection';
+import { useClappingDetection } from './hooks/useClappingDetection';
+import { FaceData } from './components/FaceOverlay';
 
 /**
  * @function blobToBase64
@@ -68,9 +75,23 @@ function App() {
   const [showEmailSentNotification, setShowEmailSentNotification] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const sendEmailTimer = useRef<number | null>(null);
-  const cameraRef = useRef<CameraFeedRef>(null); // Ref for CameraFeed component
+  const cameraRef = useRef<CameraFeedRef>(null);
   const lastEmailSendTime = useRef<number>(0);
   const emailCooldownMs = 10000; // 10 seconds cooldown for sending emails
+
+  // Face detection state
+  const [faces, setFaces] = useState<FaceData[]>([]);
+  const [hasFear, setHasFear] = useState(false);
+  const [backendConnected, setBackendConnected] = useState(true);
+  const analysisIntervalRef = useRef<number | null>(null);
+
+  // Use custom hooks
+  const { analyzeFrame, isAnalyzing } = useFaceDetection();
+  const { isClapping, isRhythmicClapping, error: clappingError, audioLevel, clapCount } = useClappingDetection();
+
+  // Alarm state
+  const [isAlarmActive, setIsAlarmActive] = useState(false);
+  const alarmEmailSentRef = useRef(false);
 
   const handleAddEmail = () => {
     if (newEmail.trim() === '') {
@@ -105,22 +126,89 @@ function App() {
     });
   }, []);
 
-  const sendEmailsWithScreenshot = async (recipients: string[], base64Image: string, mimeType: string) => {
+  // Start continuous face analysis
+  useEffect(() => {
+    const startAnalysis = async () => {
+      const videoElement = cameraRef.current?.getVideoElement();
+      if (!videoElement || videoElement.videoWidth === 0) {
+        return;
+      }
+
+      try {
+        const result = await analyzeFrame(videoElement);
+        setFaces(result.faces);
+        setHasFear(result.hasFear);
+        setBackendConnected(true);
+      } catch (error) {
+        console.error('Analysis error:', error);
+        setBackendConnected(false);
+      }
+    };
+
+    // Analyze every 500ms
+    analysisIntervalRef.current = window.setInterval(startAnalysis, 500);
+
+    return () => {
+      if (analysisIntervalRef.current) {
+        clearInterval(analysisIntervalRef.current);
+      }
+    };
+  }, [analyzeFrame]);
+
+  // Alarm logic: trigger when fear + rhythmic clapping detected
+  useEffect(() => {
+    const shouldTriggerAlarm = hasFear && isRhythmicClapping;
+    setIsAlarmActive(shouldTriggerAlarm);
+
+    // Send email alert when alarm triggers (only once per alarm event)
+    if (shouldTriggerAlarm && !alarmEmailSentRef.current && emails.length > 0) {
+      alarmEmailSentRef.current = true;
+      
+      // Send alert email after a short delay
+      setTimeout(async () => {
+        try {
+          await sendScreenshotEmail(true); // Pass true to indicate alarm email
+        } catch (error) {
+          console.error('Failed to send alarm email:', error);
+        }
+      }, 1000);
+    }
+
+    // Reset alarm email flag when alarm deactivates
+    if (!shouldTriggerAlarm) {
+      alarmEmailSentRef.current = false;
+    }
+  }, [hasFear, isRhythmicClapping, emails]);
+
+  // Display clapping error if any
+  useEffect(() => {
+    if (clappingError) {
+      console.error('Clapping detection error:', clappingError);
+    }
+  }, [clappingError]);
+
+  const sendEmailsWithScreenshot = async (recipients: string[], base64Image: string, mimeType: string, isAlarmEmail: boolean = false) => {
     const base64ImageWithPrefix = `data:${mimeType};base64,${base64Image}`;
+    const subject = isAlarmEmail ? '🚨 ALARM: Fear + Rhythmic Clapping Detected!' : 'Screenshot Alert';
+    const message = isAlarmEmail 
+      ? 'The facial recognition system detected fear emotion combined with rhythmic clapping. Please check immediately!'
+      : 'Here is your requested screenshot.';
 
     await Promise.all(
       recipients.map((recipient) =>
         emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
           to_email: recipient,
           screenshot: base64ImageWithPrefix,
+          subject: subject,
+          message: message,
         })
       )
     );
   };
 
-  const sendScreenshotEmail = async () => {
+  const sendScreenshotEmail = async (isAlarmEmail: boolean = false) => {
     const now = Date.now();
-    if (now - lastEmailSendTime.current < emailCooldownMs) {
+    if (!isAlarmEmail && now - lastEmailSendTime.current < emailCooldownMs) {
       setEmailError(`please wait ${Math.ceil((emailCooldownMs - (now - lastEmailSendTime.current)) / 1000)} seconds before sending another email.`);
       return;
     }
@@ -162,7 +250,7 @@ function App() {
     try {
       setIsSending(true);
       const { base64, mimeType } = await compressCanvasToBase64(canvas);
-      await sendEmailsWithScreenshot(recipients, base64, mimeType);
+      await sendEmailsWithScreenshot(recipients, base64, mimeType, isAlarmEmail);
 
       setShowEmailSentNotification(true);
       lastEmailSendTime.current = now; // Update last send time
@@ -201,11 +289,36 @@ function App() {
     <div className="max-w-6xl w-full mx-auto py-10 px-8 flex flex-col items-center gap-10">
       <h1 className="text-5xl font-extrabold text-zinc-50 drop-shadow-lg lowercase">stop! don't go on</h1>
 
-      <CameraFeed ref={cameraRef} />
+      {/* Alarm Overlay */}
+      <AlarmOverlay isActive={isAlarmActive} />
 
-      <Button onClick={sendScreenshotEmail} disabled={isSendButtonDisabled}>
+      {/* Clap Detection Indicator */}
+      <ClapIndicator
+        isClapping={isClapping}
+        isRhythmicClapping={isRhythmicClapping}
+        audioLevel={audioLevel}
+        clapCount={clapCount}
+      />
+
+      {/* Camera Feed with Face Overlays */}
+      <CameraFeed ref={cameraRef} faces={faces} />
+
+      {/* Status Indicator */}
+      <StatusIndicator
+        isClapping={isClapping}
+        isRhythmicClapping={isRhythmicClapping}
+        hasFear={hasFear}
+        faceCount={faces.length}
+        backendConnected={backendConnected}
+      />
+
+      {/* Send Screenshot Button */}
+      <Button onClick={() => sendScreenshotEmail(false)} disabled={isSendButtonDisabled}>
         {isSending ? 'sending...' : 'send screenshot email'}
       </Button>
+
+      {/* Face Database Manager */}
+      <FaceDatabase />
 
       <div className="w-full flex flex-col items-center gap-4">
         <h2 className="text-3xl font-bold text-zinc-100 lowercase">email recipients</h2>
